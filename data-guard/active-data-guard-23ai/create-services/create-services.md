@@ -47,86 +47,86 @@ To try this lab, you must have successfully completed:
 
 1. Review the scripts that we'll use to create the services. We downloaded the scripts in the first lab. **Without quitting SQLcl, change the directory**:
 
-   ```
-   <copy>
-   cd ~/database-maa/data-guard/active-data-guard-23ai/prepare-host/scripts/tac
-   </copy>
-   ```
+    ```
+    <copy>
+    cd ~/database-maa/data-guard/active-data-guard-23ai/prepare-host/scripts/tac
+    </copy>
+    ```
 
 2. Verify the existing services:
 
-   ```
-   <copy>
-   alter session set container=MYPDB;
-   select name from v$active_services;
-   </copy>
-   ```
+    ```
+    <copy>
+    alter session set container=MYPDB;
+    select name from v$active_services;
+    </copy>
+    ```
 
-   ![List of existing services in v$active_services](images/services-before.png)
+    ![List of existing services in v$active_services](images/services-before.png)
 
 3. Create and start the services using the scripts in the following order (**make sure you are in the container MYPDB before running this**):
 
-   ```
-   <copy>
-   set echo on
-   @create_pdb_services.sql
-   @create_pdb_service_trigger.sql
-   @execute_pdb_service_trigger.sql
-   </copy>
-   ```
+    ```
+    <copy>
+    set echo on
+    @create_pdb_services.sql
+    @create_pdb_service_trigger.sql
+    @execute_pdb_service_trigger.sql
+    </copy>
+    ```
  
-   ![Execution of the scripts that create the services](images/script-execution.png)
+    ![Execution of the scripts that create the services](images/script-execution.png)
  
-   The first script creates the service definition with high availability properties. Three services are created:
-   * MYPDB_RW for the primary role
-   * MYPDB_RO for the physical standby role
-   * MYPDB_SNAP for the snapshot standby role
+    The first script creates the service definition with high availability properties. Three services are created:
+    * MYPDB_RW for the primary role
+    * MYPDB_RO for the physical standby role
+    * MYPDB_SNAP for the snapshot standby role
  
-   The second script creates the startup trigger to start or stop the services depending on the database role.
+    The second script creates the startup trigger to start or stop the services depending on the database role.
  
-   The last script executes the same code as the startup trigger, so the services are started without restarting the PDB.
+    The last script executes the same code as the startup trigger, so the services are started without restarting the PDB.
 
 4. After the execution, the read-write service is running with high availability properties:
 
-   ```
-   <copy>
-   select name from v$active_services;
-   select name, aq_ha_notification, commit_outcome, session_state_consistency, failover_restore from v$active_services;
-   </copy>
-   ```
+    ```
+    <copy>
+    select name from v$active_services;
+    select name, aq_ha_notification, commit_outcome, session_state_consistency, failover_restore from v$active_services;
+    </copy>
+    ```
 
-   ![List of new services in v$active_services](images/services-after.png)
+    ![List of new services in v$active_services](images/services-after.png)
 
 ## Task 3: Review the connection strings and connect to the primary service
 
 1. Without quitting SQLcl, review the connection strings in `tnsnames.ora`
 
-   ```
-   <copy>
-   ! cat $ORACLE_HOME/network/admin/tnsnames.ora
-   </copy>
-   ```
+    ```
+    <copy>
+    ! cat $ORACLE_HOME/network/admin/tnsnames.ora
+    </copy>
+    ```
 
-   ![List of new services in v$active_services](images/tns-entries.png)
+    ![List of new services in v$active_services](images/tns-entries.png)
 
 2. Connect to the read-write service and verify that you are connected to the primary datavase (also notice that we don't require "*from dual*" anymore):
 
-   ```
-   <copy>
-   connect sys/WElcome123##@mypdb_rw as sysdba
-   select sys_context('USERENV','DB_UNIQUE_NAME') db_unique_name , sys_context('USERENV','SERVER_HOST') server_host;
-   </copy>
-   ```
+    ```
+    <copy>
+    connect sys/WElcome123##@mypdb_rw as sysdba
+    select sys_context('USERENV','DB_UNIQUE_NAME') db_unique_name , sys_context('USERENV','SERVER_HOST') server_host;
+    </copy>
+    ```
 
-   ![Connection to the read-write service](images/connect.png)
+    ![Connection to the read-write service](images/connect.png)
 
 3. Exit the SQLcl command-line:
 
-   ```
-   <copy>
-   exit
-   </copy>
-   ```
+    ```
+    <copy>
+    exit
+    </copy>
+    ```
 
 You have successfully created, started, and connected to the application role-based service.
 

@@ -23,60 +23,60 @@ To try this lab, you must have successfully completed the following labs:
 
 1. On the host where the standby database is running (adghol1), connect as SYSDBA and create an AWR snapshot:
 
-   ```
-   <copy>
-   sql / as sysdba
-   </copy>
-   ```
+    ```
+    <copy>
+    sql / as sysdba
+    </copy>
+    ```
 
-   ```
-   <copy>
-   select dbms_workload_repository.create_snapshot();
-   </copy>
-   ```
+    ```
+    <copy>
+    select dbms_workload_repository.create_snapshot();
+    </copy>
+    ```
 
 
 2. Wait 1-2 minutes and create another snapshot:
 
-   ```
-   <copy>
-   select dbms_workload_repository.create_snapshot();
-   </copy>
-   ```
+    ```
+    <copy>
+    select dbms_workload_repository.create_snapshot();
+    </copy>
+    ```
 
-   ![Creation of two AWR snapshots](images/create-snapshots.png)
+    ![Creation of two AWR snapshots](images/create-snapshots.png)
 
 ## Task 2: Create an AWR report
 
 1. Run the script `awrrpt.sql` to create an AWR report:
-   ```
-   <copy>
-   @?/rdbms/admin/awrrpt
-   </copy>
-   ```
+    ```
+    <copy>
+    @?/rdbms/admin/awrrpt
+    </copy>
+    ```
 
-   ![First part of the report creation](images/awrrpt-1.png)
+    ![First part of the report creation](images/awrrpt-1.png)
 
 2. Select **text** as the report_type.
-   You will notice that the DBID list shows a different DBID for the standby database. This is because the new DBID is generated syntetically to distinguish the primary snapshots from the standby snapshots.
+    You will notice that the DBID list shows a different DBID for the standby database. This is because the new DBID is generated syntetically to distinguish the primary snapshots from the standby snapshots.
 
 3. The DBID and SID are pre-selected by the reporting tool, so you only need to specify the number of days (**1**), and the snapshots to generate the report (**1** and **2**):
 
-   ![Second part of the report creation](images/awrrpt-2.png)
-   ![Third part of the report creation](images/awrrpt-3.png)
+    ![Second part of the report creation](images/awrrpt-2.png)
+    ![Third part of the report creation](images/awrrpt-3.png)
 
 ## Task 3: Review the report
 
 1. Exit SQLcl and open the AWR report for reading:
-   ```
-   <copy>
-   exit
-   less awrrpt_1_1_2.txt
-   </copy>
-   ```
+    ```
+    <copy>
+    exit
+    less awrrpt_1_1_2.txt
+    </copy>
+    ```
 
-   ![The AWR report belongs to the standby database](images/view-report.png)
-   You will notice that the AWR report belongs to the standby database.
+    ![The AWR report belongs to the standby database](images/view-report.png)
+    You will notice that the AWR report belongs to the standby database.
   
 
 You have successfully created AWR reports for the standby database. This concludes the Data Guard overview workshop.

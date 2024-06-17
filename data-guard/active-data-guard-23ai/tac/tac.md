@@ -27,95 +27,95 @@ To try this lab, you must have successfully completed the following labs:
 ## Task 1: Create the application user
 
 1. From a terminal (**the host is irrelevant for this lab**), connect to the read-write service on the primary:
-   ```
-   <copy>
-   sql sys/WElcome123##@mypdb_rw as sysdba
-   </copy>
-   ```
-
-2.  Create the user and role for the application:
     ```
     <copy>
-    create user TACUSER identified by WElcome123##;
-    CREATE ROLE TAC_ROLE NOT IDENTIFIED ;
-    GRANT CREATE TYPE TO TAC_ROLE ;
-    GRANT CREATE VIEW TO TAC_ROLE ;
-    GRANT CREATE TABLE TO TAC_ROLE ;
-    GRANT ALTER SESSION TO TAC_ROLE ;
-    GRANT CREATE CLUSTER TO TAC_ROLE ;
-    GRANT CREATE SESSION TO TAC_ROLE ;
-    GRANT CREATE SYNONYM TO TAC_ROLE ;
-    GRANT CREATE TRIGGER TO TAC_ROLE ;
-    GRANT CREATE OPERATOR TO TAC_ROLE ;
-    GRANT CREATE SEQUENCE TO TAC_ROLE ;
-    GRANT CREATE INDEXTYPE TO TAC_ROLE ;
-    GRANT CREATE PROCEDURE TO TAC_ROLE ;
-    GRANT DROP ANY DIRECTORY TO TAC_ROLE ;
-    GRANT CREATE ANY DIRECTORY TO TAC_ROLE ;
-    GRANT SELECT ANY DICTIONARY TO TAC_ROLE ;
-    GRANT KEEP DATE TIME TO TAC_ROLE;
-    GRANT KEEP SYSGUID TO TAC_ROLE;
-    GRANT TAC_ROLE TO TACUSER;
-    ALTER USER TACUSER QUOTA UNLIMITED ON USERS;
+    sql sys/WElcome123##@mypdb_rw as sysdba
     </copy>
     ```
 
-    ![Creation of the TAC user](images/create-tac-user.png)
+2.  Create the user and role for the application:
+     ```
+     <copy>
+     create user TACUSER identified by WElcome123##;
+     CREATE ROLE TAC_ROLE NOT IDENTIFIED ;
+     GRANT CREATE TYPE TO TAC_ROLE ;
+     GRANT CREATE VIEW TO TAC_ROLE ;
+     GRANT CREATE TABLE TO TAC_ROLE ;
+     GRANT ALTER SESSION TO TAC_ROLE ;
+     GRANT CREATE CLUSTER TO TAC_ROLE ;
+     GRANT CREATE SESSION TO TAC_ROLE ;
+     GRANT CREATE SYNONYM TO TAC_ROLE ;
+     GRANT CREATE TRIGGER TO TAC_ROLE ;
+     GRANT CREATE OPERATOR TO TAC_ROLE ;
+     GRANT CREATE SEQUENCE TO TAC_ROLE ;
+     GRANT CREATE INDEXTYPE TO TAC_ROLE ;
+     GRANT CREATE PROCEDURE TO TAC_ROLE ;
+     GRANT DROP ANY DIRECTORY TO TAC_ROLE ;
+     GRANT CREATE ANY DIRECTORY TO TAC_ROLE ;
+     GRANT SELECT ANY DICTIONARY TO TAC_ROLE ;
+     GRANT KEEP DATE TIME TO TAC_ROLE;
+     GRANT KEEP SYSGUID TO TAC_ROLE;
+     GRANT TAC_ROLE TO TACUSER;
+     ALTER USER TACUSER QUOTA UNLIMITED ON USERS;
+     </copy>
+     ```
+
+     ![Creation of the TAC user](images/create-tac-user.png)
 
 ## Task 2: Start a user transaction
 
 1. **In a new terminal**, connect as the newly created user using `sqlplus`, and start a transaction. Note: we require `sqlplus` instead of `sql` for this task because the way `sql` uses `PREPARED STATEMENT`, which is incompatible with Transparent Application Continuity.
 
-   ```
-   <copy>
-   sqlplus tacuser/WElcome123##@mypdb_rw
-   </copy>
-   ```
+    ```
+    <copy>
+    sqlplus tacuser/WElcome123##@mypdb_rw
+    </copy>
+    ```
 
-   ```
-   <copy>
-   select sys_context('USERENV','DB_UNIQUE_NAME') db_unique_name , sys_context('USERENV','SERVER_HOST') server_host from dual;
-   create table t (a varchar2(50));
-   insert into t values ('TAC test');
-   </copy>
-   ```
+    ```
+    <copy>
+    select sys_context('USERENV','DB_UNIQUE_NAME') db_unique_name , sys_context('USERENV','SERVER_HOST') server_host from dual;
+    create table t (a varchar2(50));
+    insert into t values ('TAC test');
+    </copy>
+    ```
 
-   ![Start a transaction with the TAC user](images/start-tac-transaction.png)
+    ![Start a transaction with the TAC user](images/start-tac-transaction.png)
 
 ## Task 3: Execute a switchover
 
-1. **From the first terminal where you have the SQLcl session as SYS**, connect to `ADGHOL0_DGCI` and execute a switchover. **Replace `ADGHOL0_DGCI` with the correct connection string and `ADGHOL1_UNIQUE_NAME` with the standby database db_unique_name.**
+1. **From the first terminal where you have the SQLcl session as SYS**, connect to `ADGHOL0_DGCI` and execute a switchover. **Replace `ADGHOL0_DGCI` with the correct connection string and `ADGHOL1_UNIQUE_NAME` with the standby database `db_unique_name`.**
 
-   ```
-   <copy>
-   connect sys/WElcome123##@ADGHOL0_DGCI as sysdba
-   dg show configuration
-   set time on
-   dg switchover to ADGHOL1_UNIQUE_NAME
-   </copy>
-   ```
+    ```
+    <copy>
+    connect sys/WElcome123##@ADGHOL0_DGCI as sysdba
+    dg show configuration
+    set time on
+    dg switchover to ADGHOL1_UNIQUE_NAME
+    </copy>
+    ```
 
-   ![Show the Data Guard configuration](images/show-configuration.png)
+    ![Show the Data Guard configuration](images/show-configuration.png)
 
-   ![Execute the switchover](images/switchover.png)
+    ![Execute the switchover](images/switchover.png)
 
-   You don't need to wait for the switchover to finish, you can continue to the next step.
+    You don't need to wait for the switchover to finish, you can continue to the next step.
 
 ## Task 4: Commit the user transaction
 
 1. Back to the `sqlplus` session, commit the transaction that we left pending:
-   ```
-   <copy>
-   commit;
-   select * from t;
-   select sys_context('USERENV','DB_UNIQUE_NAME') db_unique_name , sys_context('USERENV','SERVER_HOST') server_host;
-   exit
-   </copy>
-   ```
+    ```
+    <copy>
+    commit;
+    select * from t;
+    select sys_context('USERENV','DB_UNIQUE_NAME') db_unique_name , sys_context('USERENV','SERVER_HOST') server_host;
+    exit
+    </copy>
+    ```
 
-   ![Successful execution of the commit](images/commit.png)
+    ![Successful execution of the commit](images/commit.png)
 
-   You should see that the commit succeeds, the data inserted before the switchover is there, and that we are now connected to the second host where the new primary resides.
+    You should see that the commit succeeds, the data inserted before the switchover is there, and that we are now connected to the second host where the new primary resides.
 
 ## Task 5: Switch back to the original primary
 
@@ -123,20 +123,20 @@ Before continuing with the next labs, don't forget to switch back. The labs expe
 
 1. **From the terminal where you have the SQLcl session as SYS**, execute another switchover back to the database on host `adghol`:
 
-   ```
-   <copy>
-   dg show configuration
-   set time on
-   dg switchover to ADGHOL0_UNIQUE_NAME
-   </copy>
-   ```
+    ```
+    <copy>
+    dg show configuration
+    set time on
+    dg switchover to ADGHOL0_UNIQUE_NAME
+    </copy>
+    ```
 
 2. Exit the SQLcl command-line:
-   ```
-   <copy>
-   exit
-   </copy>
-   ```
+    ```
+    <copy>
+    exit
+    </copy>
+    ```
 
 You have successfully tested Transparent Application Continuity.
 

@@ -65,42 +65,43 @@ Estimated Lab Time: 15 Minutes
     ````
    ![Screenshot of the cloud shell showing the steps executed so far](images/prepare-host0-1.png)
 
-1. Become the `oracle` user:
+2. Become the `oracle` user:
 
     ```
     <copy>sudo su - oracle</copy>
     ```
 
-1. Download the helper scripts using git:
-   ```
-   <copy>
-   git clone -b main -n --filter=tree:0 --depth=1 https://github.com/oracle-livelabs/database-maa.git
-   cd database-maa
-   git sparse-checkout set --no-cone data-guard/active-data-guard-23ai/prepare-host/scripts
-   git checkout
-   </copy>
-   ```
+3. Download the helper scripts using git:
 
-1. Execute the preparation script. This will:
-   * Create the static service registration entry in listener.ora
-   * Create the application TNS entries in tnsnames.ora
+    ```
+    <copy>
+    git clone -b main -n --filter=tree:0 --depth=1 https://github.com/oracle-livelabs/database-maa.git
+    cd database-maa
+    git sparse-checkout set --no-cone data-guard/active-data-guard-23ai/prepare-host/scripts
+    git checkout
+    </copy>
+    ```
+
+4. Execute the preparation script. This will:
+    * Create the static service registration entry in listener.ora
+    * Create the application TNS entries in tnsnames.ora
     ```
     <copy>
     sh ~/database-maa/data-guard/active-data-guard-23ai/prepare-host/scripts/prepare.sh
     </copy>
     ```
 
-1. Verify the content of `listener.ora` and `tnsnames.ora`
-   ```
-   <copy>
-   cat $ORACLE_HOME/network/admin/listener.ora
-   cat $ORACLE_HOME/network/admin/tnsnames.ora
-   </copy>
-   ```
+5. Verify the content of `listener.ora` and `tnsnames.ora`
+    ```
+    <copy>
+    cat $ORACLE_HOME/network/admin/listener.ora
+    cat $ORACLE_HOME/network/admin/tnsnames.ora
+    </copy>
+    ```
     ![Content of listener.ora](images/listener-ora.png)
-  The static service registration is required for the duplicate, and also because there is no Oracle Clusterware: Data Guard has to restart the remote instance with a SQL*Net connection when switching over.
-  By default, without Oracle Clusterware, Data Guard expects a static service named `{DB_UNIQUE_NAME}_DGMGRL.{DOMAIN_NAME}`. It is possible to override this name using the Data Guard property `StaticConnectIdentifier` (we will see that over the next labs).
-  For more information about static service registration, check the documentation: [Configuring Static Service Registration](https://docs.oracle.com/en/database/oracle/oracle-database/23/netag/enabling-advanced-features.html#GUID-0203C8FA-A4BE-44A5-9A25-3D1E578E879F)
+    The static service registration is required for the duplicate, and also because there is no Oracle Clusterware: Data Guard has to restart the remote instance with a SQL*Net connection when switching over.
+    By default, without Oracle Clusterware, Data Guard expects a static service named `{DB_UNIQUE_NAME}_DGMGRL.{DOMAIN_NAME}`. It is possible to override this name using the Data Guard property `StaticConnectIdentifier` (we will see that over the next labs).
+    For more information about static service registration, check the documentation: [Configuring Static Service Registration](https://docs.oracle.com/en/database/oracle/oracle-database/23/netag/enabling-advanced-features.html#GUID-0203C8FA-A4BE-44A5-9A25-3D1E578E879F)
 
 ## Task 3: Create a connection to the standby database host
 
@@ -151,21 +152,21 @@ You have now successfully created a database connection to the primary and the s
     ````
      
 4. Execute the preparation script. This will:
-   * Create the static service registration entry in listener.ora
-   * Create the application TNS entries in tnsnames.ora
-   ```
-   <copy>
-   sh ~/database-maa/data-guard/active-data-guard-23ai/prepare-host/scripts/prepare.sh
-   </copy>
-   ```
+    * Create the static service registration entry in listener.ora
+    * Create the application TNS entries in tnsnames.ora
+    ```
+    <copy>
+    sh ~/database-maa/data-guard/active-data-guard-23ai/prepare-host/scripts/prepare.sh
+    </copy>
+    ```
   
 5. Verify the content of `listener.ora` and `tnsnames.ora`
-   ```
-   <copy>
-   cat $ORACLE_HOME/network/admin/listener.ora
-   cat $ORACLE_HOME/network/admin/tnsnames.ora
-   </copy>
-   ```
+    ```
+    <copy>
+    cat $ORACLE_HOME/network/admin/listener.ora
+    cat $ORACLE_HOME/network/admin/tnsnames.ora
+    </copy>
+    ```
 
 ## Task 5: copy the Transparent Data Encryption (TDE) wallet and password file
 
@@ -174,61 +175,59 @@ Oracle Data Guard requires the same Transparent Data Encryption (TDE) master key
 Similarly, the default Data Guard authentication mechanism is to use the password file. The password files must match to ensure that there are no authentication problems.
 
 1. **On the primary host** (adghol0), copy the keys in a location accessible from the user opc:
-   ```
-   <copy>
-   cd /opt/oracle/dcs/commonstore/wallets/$ORACLE_UNQNAME/tde
-   tar cvf /tmp/wallet.tar cwallet.sso ewallet.p12
-   cp $ORACLE_HOME/dbs/orapwadghol /tmp
-   chmod 644 /tmp/orapwadghol
-   </copy>
-   ```
+    ```
+    <copy>
+    cd /opt/oracle/dcs/commonstore/wallets/$ORACLE_UNQNAME/tde
+    tar cvf /tmp/wallet.tar cwallet.sso ewallet.p12
+    cp $ORACLE_HOME/dbs/orapwadghol /tmp
+    chmod 644 /tmp/orapwadghol
+    </copy>
+    ```
   
 2. Temporarily **go back to the Cloud Shell environment** by exiting the shell twice:
-   ```
-   exit
-   exit
-   ```
+    ```
+    exit
+    exit
+    ```
   
 3. Copy the wallet and password file from one node to the other, then delete them.
   In the following command, replace IP_ADDRESS0 and IP_ADDRESS1 with the public IP addresses of the two hosts you noted down earlier.
-   ```
-   <copy>
-   scp -i cloudshellkey opc@IP_ADDRESS0:/tmp/wallet.tar /tmp
-   scp -i cloudshellkey opc@IP_ADDRESS0:/tmp/orapwadghol /tmp
-   scp -i cloudshellkey /tmp/wallet.tar opc@IP_ADDRESS1:/tmp
-   scp -i cloudshellkey /tmp/orapwadghol opc@IP_ADDRESS1:/tmp
-   rm /tmp/wallet.tar
-   rm /tmp/orapwadghol
-   </copy>
-   ```
-   ![Steps executed to copy the wallet on the second host](images/wallet-copy-1.png)
+    ```
+    <copy>
+    scp -i cloudshellkey opc@IP_ADDRESS0:/tmp/wallet.tar /tmp
+    scp -i cloudshellkey opc@IP_ADDRESS0:/tmp/orapwadghol /tmp
+    scp -i cloudshellkey /tmp/wallet.tar opc@IP_ADDRESS1:/tmp
+    scp -i cloudshellkey /tmp/orapwadghol opc@IP_ADDRESS1:/tmp
+    rm /tmp/wallet.tar
+    rm /tmp/orapwadghol
+    </copy>
+    ```
+    ![Steps executed to copy the wallet on the second host](images/wallet-copy-1.png)
   
 4. **Connect back to the first host** and remove the wallet and password file from the temporary location:
-  
-   ```
-   <copy>
-   ssh -i cloudshellkey opc@IP_ADDRESS0
-   sudo su - oracle
-   rm /tmp/wallet.tar
-   rm /tmp/orapwadghol
-   </copy>
-   ```
+    ```
+    <copy>
+    ssh -i cloudshellkey opc@IP_ADDRESS0
+    sudo su - oracle
+    rm /tmp/wallet.tar
+    rm /tmp/orapwadghol
+    </copy>
+    ```
 
 5. **On the standby host** (adghol1), copy the files to the correct locations and permissions (as `oracle`), then remove the temporary files as `opc`:
-  
-   ```
-   <copy>
-   cd /opt/oracle/dcs/commonstore/wallets/$ORACLE_UNQNAME/tde
-   tar xvf /tmp/wallet.tar
-   cp /tmp/orapwadghol $ORACLE_HOME/dbs
-   chmod 600 $ORACLE_HOME/dbs/orapwadghol
-   exit
-   rm /tmp/wallet.tar
-   rm /tmp/orapwadghol
-   sudo su - oracle
-   </copy>
-   ```
-   ![Steps executed to copy the wallet on the second host](images/wallet-copy-2.png)
+    ```
+    <copy>
+    cd /opt/oracle/dcs/commonstore/wallets/$ORACLE_UNQNAME/tde
+    tar xvf /tmp/wallet.tar
+    cp /tmp/orapwadghol $ORACLE_HOME/dbs
+    chmod 600 $ORACLE_HOME/dbs/orapwadghol
+    exit
+    rm /tmp/wallet.tar
+    rm /tmp/orapwadghol
+    sudo su - oracle
+    </copy>
+    ```
+    ![Steps executed to copy the wallet on the second host](images/wallet-copy-2.png)
 
 You have successfully prepared the two hosts with everything required to start configuring Data Guard.
 

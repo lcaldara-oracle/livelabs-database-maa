@@ -27,154 +27,154 @@ To try this lab, you must have successfully completed the following labs:
 ## Task 1: Open the standby database and enable Real-Time Query
 
 1. From any terminal, connect to the standby database as SYSDBA. **Replace `ADGHOL1_DGCI` with the standvby database connection identifier obtained in Lab 2.
-   ```
-   <copy>
-   sql sys/WElcome123##@ADGHOL1_DGCI as sysdba
-   </copy>
-   ```
+    ```
+    <copy>
+    sql sys/WElcome123##@ADGHOL1_DGCI as sysdba
+    </copy>
+    ```
 
 2. Open the CDB and the PDB, then verify that the read-only service `MYPDB_RO` is started:
-   ```
-   <copy>
-   alter database open;
-   alter pluggable database MYPDB open;
-   select name from v$active_services where con_name='MYPDB';
-   </copy>
-   ```
+    ```
+    <copy>
+    alter database open;
+    alter pluggable database MYPDB open;
+    select name from v$active_services where con_name='MYPDB';
+    </copy>
+    ```
 
-   ![Open the standby CDB and PDB](images/open-standby.png)
+    ![Open the standby CDB and PDB](images/open-standby.png)
 
 3. Connect with an application user to the read-only service. Regardless of where the standby database is, the role-based service will land you there:
-   ```
-   <copy>
-   connect tacuser/WElcome123##@mypdb_ro
-   </copy>
-   ```
+    ```
+    <copy>
+    connect tacuser/WElcome123##@mypdb_ro
+    </copy>
+    ```
 
-   We have created the user `tacuser` in the lab *Transparent Application Continuity*. If you have not tried it, you can copy the user creation commands from there, and also create the table `t` on the primary database.
+    We have created the user `tacuser` in the lab *Transparent Application Continuity*. If you have not tried it, you can copy the user creation commands from there, and also create the table `t` on the primary database.
 
 4. Read-only queries will work on the standby database while it is applying the changes coming from the primary.
-   ```
-   <copy>
-   select * from t;
-   </copy>
-   ```
+    ```
+    <copy>
+    select * from t;
+    </copy>
+    ```
 
-   ![Query the standby PDB](images/query-standby.png)
+    ![Query the standby PDB](images/query-standby.png)
 
 5. Connect to the read-only service (standby database) as `SYS` and check the standby database open_mode.
-   ```
-   <copy>
-   connect sys/WElcome123##@mypdb_ro as sysdba
-   select open_mode from v$database;
-   </copy>
-   ```
+    ```
+    <copy>
+    connect sys/WElcome123##@mypdb_ro as sysdba
+    select open_mode from v$database;
+    </copy>
+    ```
 
-   You should see the following line in the output indicating that the feature Real-Time Query is activated:
-   ```
-   READ ONLY WITH APPLY
-   ```
+    You should see the following line in the output indicating that the feature Real-Time Query is activated:
+    ```
+    READ ONLY WITH APPLY
+    ```
 
-   ![Real-Time Query is enabled](images/real-time-query-on.png)
+    ![Real-Time Query is enabled](images/real-time-query-on.png)
 
 6. Connect to the primary database as `tacuser` and insert a record into the table `t`:
-   ```
-   <copy>
-   connect tacuser/WElcome123##@mypdb_rw
-   </copy>
-   ```
-   ```
-   <copy>
-   insert into t values ('Find me on the standby!');
-   commit;
-   </copy>
-   ```
-   
+    ```
+    <copy>
+    connect tacuser/WElcome123##@mypdb_rw
+    </copy>
+    ```
+    ```
+    <copy>
+    insert into t values ('Find me on the standby!');
+    commit;
+    </copy>
+    ```
+    
 7. Connect to the read-only service and verify that the inserted data is visible:
-   ```
-   <copy>
-   connect tacuser/WElcome123##@mypdb_ro
-   select * from t;
-   </copy>
-   ```
+    ```
+    <copy>
+    connect tacuser/WElcome123##@mypdb_ro
+    select * from t;
+    </copy>
+    ```
 
-   ![Real-Time Query in action](images/real-time-query.png)
+    ![Real-Time Query in action](images/real-time-query.png)
 
 ## Task 2: Enable synchronous transport and causal consistency
 The standby database can read consistent data (read all the data as soon as it's committed on the primary), despite having an asynchronous APPLY process. But that requires the TRANSPORT to be synchronous, otherwise the commands that enforce consistent reads will fail. This is because the sessions on a synchronous standby database know that all the redo has been written to the standby redo logs, and can wait for the last written SCN to be applied to ensure a consistent read.
 
 1. On the standby database, try to do a read that is consistent with the primary database:
-   ```
-   <copy>
-   connect tacuser/WElcome123##@mypdb_ro
-   alter session set standby_max_data_delay=0;
-   select * from t;
-   </copy>
-   ```
-   
-   ![External consistent read are not possible yet](images/no-external-consistency.png)
-   For more information on causal consistency, refer to the documentation: [Concepts and Administration - Real-Time Query](https://docs.oracle.com/en/database/oracle/oracle-database/23/sbydb/managing-oracle-data-guard-physical-standby-databases.html#GUID-07CB190C-C248-4FF5-AB64-EAA9C6D42677)
-   
+    ```
+    <copy>
+    connect tacuser/WElcome123##@mypdb_ro
+    alter session set standby_max_data_delay=0;
+    select * from t;
+    </copy>
+    ```
+    
+    ![External consistent read are not possible yet](images/no-external-consistency.png)
+    For more information on causal consistency, refer to the documentation: [Concepts and Administration - Real-Time Query](https://docs.oracle.com/en/database/oracle/oracle-database/23/sbydb/managing-oracle-data-guard-physical-standby-databases.html#GUID-07CB190C-C248-4FF5-AB64-EAA9C6D42677)
+    
 2. From another terminal, connect to the Data Guard configuration with `dgmgrl` and set the transport mode to synchonous:
 
-   ```
-   <copy>
-   dgmgrl /
-   </copy>
-   ```
+    ```
+    <copy>
+    dgmgrl /
+    </copy>
+    ```
 
-   Change the log transport mode to synchronous for primary and standby, then set the MaxAvailability protection mode:
-   ```
-   <copy>
-   -- show/edit all members new in 23ai
-   show all members LogXptMode;
-   edit all members set property LogXptMode='SYNC';
-   show all members LogXptMode;
-   EDIT CONFIGURATION  SET PROTECTION MODE  as MaxAvailability;
-   </copy>
-   ```
+    Change the log transport mode to synchronous for primary and standby, then set the MaxAvailability protection mode:
+    ```
+    <copy>
+    -- show/edit all members new in 23ai
+    show all members LogXptMode;
+    edit all members set property LogXptMode='SYNC';
+    show all members LogXptMode;
+    EDIT CONFIGURATION  SET PROTECTION MODE  as MaxAvailability;
+    </copy>
+    ```
 
-   ![Activation of synchronous redo transport](images/sync-transport.png)
+    ![Activation of synchronous redo transport](images/sync-transport.png)
 
-   We do these commands from `dgmgrl`, because:
-   * `SHOW/EDIT ALL MEMBERS`
-   * `EDIT CONFIGURATION SET PROTECTION MODE`
-   are not integrated yet in SQLcl at the time of writing the lab.
+    We do these commands from `dgmgrl`, because:
+    * `SHOW/EDIT ALL MEMBERS`
+    * `EDIT CONFIGURATION SET PROTECTION MODE`
+    are not integrated yet in SQLcl at the time of writing the lab.
 
 3. Back to the session using the read-only service, doing a read that is consistent with the primary will work:
-   ```
-   <copy>
-   connect tacuser/WElcome123##@mypdb_ro
-   alter session set standby_max_data_delay=0;
-   select * from t;
-   </copy>
-   ```
+    ```
+    <copy>
+    connect tacuser/WElcome123##@mypdb_ro
+    alter session set standby_max_data_delay=0;
+    select * from t;
+    </copy>
+    ```
 
-   ![External consistent reads work once the transport is synchronous](images/external-consistency.png)
+    ![External consistent reads work once the transport is synchronous](images/external-consistency.png)
 
 ## Task 3: Enable DML redirection
 1. Finally, still while connected to the read-only service, enable DML redirection and see that DML will work while connected to the standby database.
 
-   The first try will fail with:
-   `ORA-16000: database or pluggable database open for read-only access`:
+    The first try will fail with:
+    `ORA-16000: database or pluggable database open for read-only access`:
 
-   ```
-   <copy>
-   insert into t values ('DML test');
-   </copy>
-   ```
+    ```
+    <copy>
+    insert into t values ('DML test');
+    </copy>
+    ```
 
 2. After enabling DML redirection, it will succeed:
-   ```
-   <copy>
-   alter session enable ADG_REDIRECT_DML;
-   insert into t values ('DML test');
-   commit;
-   exit
-   </copy>
-   ```
-   
-   ![DML works on the standby thanks to DML redirection](images/dml-redirection.png)
+    ```
+    <copy>
+    alter session enable ADG_REDIRECT_DML;
+    insert into t values ('DML test');
+    commit;
+    exit
+    </copy>
+    ```
+    
+    ![DML works on the standby thanks to DML redirection](images/dml-redirection.png)
 
 You have successfully configured Real-Time Query and DML Redirection.
 
