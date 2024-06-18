@@ -6,53 +6,107 @@ In this lab, we connect to the database hosts and do some preliminary preparatio
 Estimated Lab Time: 15 Minutes
 
 ### Objectives
-- Create a connection to the primary database host
+- Prepare the connection to the database hosts
 - Prepare the primary database host
-- Create a connection to the standby database host
 - Prepare the standby database host
 - Copy the TDE wallet and password file
 
-## Task 1: Create the connection to the primary database host
+## Task 1: Prepare the connection to the database hosts
 
 1. Open up the menu in the left hand corner.  
 
 2. From the menu, select **Oracle Database**, then **Oracle Base Database (VM, BM)**.
 
-  ![Menu of OCI Console showing how to navigate to the next steps](https://oracle-livelabs.github.io/common/images/console/database-dbcs.png " ")
+   ![Menu of OCI Console showing how to navigate to the next steps](https://oracle-livelabs.github.io/common/images/console/database-dbcs.png " ")
 
 3. In the List Scope section on the left, enter the first part of the compartment assigned to you in the Search field, then click the compartment name.
-  ![List of compartments where the correct compartment must be selected](images/select-compartment-livelabs.png)
+    ![List of compartments where the correct compartment must be selected](images/select-compartment-livelabs.png)
     
-   There are two Database Systems created for you. The system prefixed with `adghol0` is your primary database, and the system prefixed with `adghol1` is your secondary database.
+   There are two Database Systems created for you. The system prefixed with `adghol0` is the primary database, and the system prefixed with `adghol1` is the secondary database that we will become the standby database.
    
 4. Click the name of the primary database (`adghol0`).
-  ![OCI Console showing how to navigate to the next step](images/db-systems.png)
-  Scroll down on the page and click on **Nodes(1)** to find the host's **Public IP Address**. Copy the address on the clipboard and make sure to have this information noted down for later.
-  ![Screenshot of OCI Console showing how to navigate to the next step](images/node0.png)
-5. Open the **Cloud Shell** using the icon next to the region.
-  ![Screenshot of OCI Console showing the button for the Cloud Shell](images/cloud-shell.png)
+    ![OCI Console showing how to navigate to the next step](images/db-systems.png)
+5. Scroll down on the page and click on **Nodes(1)** to find the host's **Public IP Address**. Copy the address on the clipboard and make sure to have this information noted down for later.
+    ![Screenshot of OCI Console showing how to navigate to the next step](images/node0.png)
+
+6. Navigate back to the **Oracle Base Database Service** 
+    ![Menu of OCI Console showing how to navigate to the next steps](https://oracle-livelabs.github.io/common/images/console/database-dbcs.png " ")
+
+7. click the name of the secondary database (`adghol1`).
+    ![OCI Console showing how to navigate to the next step](images/db-systems.png)
+
+8. Scroll down on the page and click on **Nodes(1)** to find the host's **Public IP Address**. Copy the address on the clipboard and make sure to have this information noted down for later.
+    ![Screenshot of OCI Console showing how to navigate to the next step](images/node1.png)
+
+9. Open the **Cloud Shell** using the icon next to the region.
+    ![Screenshot of OCI Console showing the button for the Cloud Shell](images/cloud-shell.png)
   The Cloud Shell opens after a few seconds and shows the **prompt**.
 
-6. Find your ssh private key which has been created earlier to connect to the host where the primary database is located.
-   1. If you have used Reserve Workshop on Livelabs option (Green Button), you should have used any of the method for generating SSH key pairs using [How to Generate SSH Keys](https://oracle-livelabs.github.io/common/labs/generate-ssh-key/?lab=generate-ssh-keys) .
+10. Find your ssh private key which has been created earlier to connect to the host where the primary database is located.
+     1. If you have used Reserve Workshop on Livelabs option (Green Button), you should have used any of the method for generating SSH key pairs using [How to Generate SSH Keys](https://oracle-livelabs.github.io/common/labs/generate-ssh-key/?lab=generate-ssh-keys) .
    Now, you should have the **Public** and **Private** key pair. You must have provided the Public Key while reserving the lab and you need the repsective Private key to connect the DB Server.
-   2. If you have used Run on Your Tenancy option (Brown Button), you must use the downloaded public and private keys (While creating the DB Systems) for connecting to the DB servers.
+     2. If you have used Run on Your Tenancy option (Brown Button), you must use the downloaded public and private keys (While creating the DB Systems) for connecting to the DB servers.
 
    In all the labs we use Cloud shell to connect to the DB server. You can also connect to the DB servers in any of your preferred way such as Terminal in Mac, Powershell in Windows, Putty etc.  Refer the above mentioned link [How to Connect to Servers](https://oracle-livelabs.github.io/common/labs/generate-ssh-key/?lab=generate-ssh-keys) for detailed instructions. Once you are connected to the DB server, **the rest of the instructions will remain same**.
 
-7. Using the **Upload** facility, upload the private key in the **Cloud Shell** environment.
-  ![Screenshot of the cloud shell showing how to upload the keys](./images/cloud-shell-upload.png)
-  ![Screenshot of the cloud shell showing how to upload the keys](./images/cloud-shell-upload-key.png)
+11. Using the **Upload** facility, upload the private key in the **Cloud Shell** environment.
+    ![Screenshot of the cloud shell showing how to upload the keys](./images/cloud-shell-upload.png)
+    ![Screenshot of the cloud shell showing how to upload the keys](./images/cloud-shell-upload-key.png)
    
-8. Change the permission of the private key to `0600` and connect to the primary host as `opc`, using the public IP address that you have noted down earlier.
+12. To ease the copy & paste of the next operations, rename the key file to `cloudshellkey` (replace `YOUR_KEY_FILE` with the actual name):
+    ````
+    <copy>mv YOUR_KEY_FILE cloudshellkey</copy>
+    ````
+13. Change the permission of the private key to `0600`:
     ````
     <copy>chmod 600 cloudshellkey</copy>
     ````
-    Replace `cloudshellkey` with the name of your private key file.
+14. Prepare the SSH config file to connect to the hosts.
     ````
-    <copy>ssh -i cloudshellkey opc@IP_ADDRESS</copy>
+    <copy>
+    mkdir ~/.ssh
+    </copy>
     ````
-    Replace again `cloudshellkey` with the name of your private key file, and `IP_ADDRESS` with the real public IP address.
+    **Replace IP_ADDRESS0 and IP_ADDRESS1 with the IPs that you have noted down earlier**.
+    ````
+    <copy>
+    bash -c "cat <<EOF > ~/.ssh/config
+    Host adghol0
+        Hostname \$0
+        User opc
+        IdentityFile ~/cloudshellkey
+
+    Host adghol1
+        Hostname \$1
+        User opc
+        IdentityFile ~/cloudshellkey
+    EOF" IP_ADDRESS0 IPADDRESS1
+    </copy>
+    ````
+15. Verify the content of the SSH config file:
+    ````
+    <copy>
+    cat ~/.ssh/config
+    </copy>
+    ````
+    it should look similar to this (with the correct IP addresses):
+    ````
+    Host adghol0
+    Hostname 129.148.41.182
+        User opc
+        IdentityFile ~/cloudshellkey
+    
+    Host adghol1
+        Hostname 168.75.74.51
+        User opc
+        IdentityFile ~/cloudshellkey
+    ````
+16. Try the connection to the primary host:
+    ````
+    <copy>
+    ssh adghol0
+    </copy>
+    ````
 
    You should be connected to the primary database host.
 
@@ -103,32 +157,17 @@ Estimated Lab Time: 15 Minutes
     By default, without Oracle Clusterware, Data Guard expects a static service named `{DB_UNIQUE_NAME}_DGMGRL.{DOMAIN_NAME}`. It is possible to override this name using the Data Guard property `StaticConnectIdentifier` (we will see that over the next labs).
     For more information about static service registration, check the documentation: [Configuring Static Service Registration](https://docs.oracle.com/en/database/oracle/oracle-database/23/netag/enabling-advanced-features.html#GUID-0203C8FA-A4BE-44A5-9A25-3D1E578E879F)
 
-## Task 3: Create a connection to the standby database host
+## Task 3: Prepare the standby database host
 
-1. Duplicate the tab in your browser. If your browser does not support tab duplication, open a new tab and connect again to the Cloud Console.
+1.  **Duplicate the tab in your browser**. If your browser does not support tab duplication, open a new tab and connect again to the Cloud Console.
+    If you get any errors opening the Cloud Shell, make sure the correct compartment is selected.
 
-2. Repeat all the steps from **Task 1: Create the connection to the primary database host**
-  This time, select the **adghol1** DB System (the standby database).
-  ![OCI Console showing the existing DB Systems](images/db-systems.png)
-  Scroll down on the page and click on **Nodes(1)** to get the public IP address. Copy it to the clipboard and make sure to have this information noted down.
-  ![Screenshot of OCI Console showing the public IP address of the second node](images/node1.png)
-
-3. Open the **Cloud Shell** using the icon next to the region.
-  ![Screenshot of OCI Console showing the button for the Cloud Shell](images/cloud-shell.png)
-  The Cloud Shell opens after a few seconds and shows the **prompt**.
-
-7. The private key that you have uploaded in the previous step should already be there. The same key can be used to connect to the standby database host.
-  Connect to the standby host as `opc`, using the public IP address that you have noted down earlier.
+2. Connect to the secondary host:
     ````
-    <copy>ssh -i cloudshellkey opc@IP_ADDRESS2</copy>
+    <copy>
+    ssh adghol1
+    </copy>
     ````
-    Replace `cloudshellkey` with the name of your private key file, and `IP_ADDRESS2` with the public IP address of the standby database host.
-
-9. You should be connected to the standby database host.
-
-You have now successfully created a database connection to the primary and the standby database.
-
-## Task 4: Prepare the standby database host
 
 1. Install some packages that we will use later:
     ```
@@ -168,7 +207,7 @@ You have now successfully created a database connection to the primary and the s
     </copy>
     ```
 
-## Task 5: copy the Transparent Data Encryption (TDE) wallet and password file
+## Task 4: copy the Transparent Data Encryption (TDE) wallet and password file
 
 Oracle Data Guard requires the same Transparent Data Encryption (TDE) master keys in the primary and standby database wallets. The quickest way to achieve that is to copy the entire wallet from the primary to the standby database.
 
@@ -194,10 +233,10 @@ Similarly, the default Data Guard authentication mechanism is to use the passwor
   In the following command, replace IP_ADDRESS0 and IP_ADDRESS1 with the public IP addresses of the two hosts you noted down earlier.
     ```
     <copy>
-    scp -i cloudshellkey opc@IP_ADDRESS0:/tmp/wallet.tar /tmp
-    scp -i cloudshellkey opc@IP_ADDRESS0:/tmp/orapwadghol /tmp
-    scp -i cloudshellkey /tmp/wallet.tar opc@IP_ADDRESS1:/tmp
-    scp -i cloudshellkey /tmp/orapwadghol opc@IP_ADDRESS1:/tmp
+    scp adghol0:/tmp/wallet.tar /tmp
+    scp adghol0:/tmp/orapwadghol /tmp
+    scp /tmp/wallet.tar adghol1:/tmp
+    scp /tmp/orapwadghol adghol1:/tmp
     rm /tmp/wallet.tar
     rm /tmp/orapwadghol
     </copy>
@@ -207,7 +246,7 @@ Similarly, the default Data Guard authentication mechanism is to use the passwor
 4. **Connect back to the first host** and remove the wallet and password file from the temporary location:
     ```
     <copy>
-    ssh -i cloudshellkey opc@IP_ADDRESS0
+    ssh adghol0
     sudo su - oracle
     rm /tmp/wallet.tar
     rm /tmp/orapwadghol
